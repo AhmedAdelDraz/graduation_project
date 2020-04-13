@@ -23,13 +23,20 @@ from utils import *
 from messages import send_message
 
 
-
+#***********************************************************************************************
 C1=[238, 72, 58, 24, 203, 230, 54, 167, 246, 136, 106, 95, 226, 171, 43, 159, 231, 101, 65, 157]
 C2=[122, 71, 173, 32, 147, 241, 53, 197, 228, 164, 4, 209, 175, 223, 176, 182, 48, 3, 70, 13]
 C3=[148, 69, 133, 41, 157, 137, 125, 245, 89, 85, 162, 43, 16, 178, 197, 150, 13, 140, 177, 224]
-idx_to_labels=['aeroplane','bicycle','bird','boat','bottle','bus','car','cat','chair','cow','diningtable','dog','horse','motorbike','person','pottedplant','sheep','sofa','train','tvmonitor']
-def visualize_img(img,bboxes,thickness,name):
-  img=img.reshape(img.shape[1],img.shape[1],3)
+#my_update
+color = list(zip(C1,C2,C3))
+#***********************************************************************************************
+
+idx_to_labels = ['aeroplane','bicycle','bird','boat','bottle','bus','car','cat','chair','cow',\
+  'diningtable','dog','horse','motorbike','person','pottedplant','sheep','sofa','train','tvmonitor']
+
+def visualize_img(img, bboxes, thickness, name):
+  
+  img = img.reshape(img.shape[1],img.shape[1],3)
   for c, boxes_c in enumerate(bboxes):
     for b in boxes_c:
       #ul_x, ul_y=b[0]-b[2]/2.0, b[1]-b[3]/2.0
@@ -38,10 +45,10 @@ def visualize_img(img,bboxes,thickness,name):
       #ul_x, ul_y=(min(max(int(ul_x),0),415),min(max(int(ul_y),0),415))
       #br_x, br_y=(min(max(int(br_x),0),415),min(max(int(br_y),0),415))
 
-      ul_x, ul_y=int(b[0]), int(b[1])
-      br_x, br_y=int(b[2]), int(b[3])
+      ul_x, ul_y = int(b[0]), int(b[1])
+      br_x, br_y = int(b[2]), int(b[3])
 
-      color_class=(C1[c], C2[c], C3[c])
+      color_class = color[c]
       img=cv2.rectangle(img, (ul_x, ul_y), (br_x, br_y), color=color_class, thickness=3) 
       label = '%s: %.2f' % (idx_to_labels[c], b[-1]) 
       labelSize, baseLine = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1) 
@@ -59,9 +66,9 @@ voc_dir = '/home/alex054u4/data/nutshell/newdata/VOCdevkit/VOC%d'
 
 # Define the model hyper parameters
 is_training = tf.placeholder(tf.bool)
-N_classes=20
+N_classes = 20
 x = tf.placeholder(tf.float32, shape=(None, 416, 416, 3), name='input_x')
-yolo=model(x)
+yolo = model(x)
 # Define an optimizer
 step = tf.Variable(0, trainable=False)
 lr = tf.train.piecewise_constant(
@@ -69,7 +76,7 @@ lr = tf.train.piecewise_constant(
     [1e-8, 1e-7, 1e-6, 1e-5, 1e-4, 1e-3, 1e-4, 1e-5])
 train = tf.train.MomentumOptimizer(lr, 0.9).minimize(yolo.loss,global_step=step)
 
-current_epo= tf.Variable(0, name = 'current_epo',trainable=False,dtype=tf.int32)
+current_epo= tf.Variable(0, name = 'current_epo', trainable=False,dtype=tf.int32)
 
 #Check points
 checkpoint_path   = "/home/alex054u3/data/nutshell/training_trial1"
@@ -81,12 +88,15 @@ init_op     = tf.global_variables_initializer()
 train_saver = tf.train.Saver(max_to_keep=2)
 
 def evaluate_accuracy(data_type='tr'):
-  if (data_type  == 'tr'): acc_data  = voc.load(voc_dir % 2007,'trainval',total_num =100)
-  elif(data_type == 'te') : acc_data  = voc.load(voc_dir % 2007, 'test', total_num=100)
+  if (data_type  == 'tr'): 
+    acc_data  = voc.load(voc_dir % 2007, 'trainval', total_num = 100)
+  elif(data_type == 'te') : 
+    acc_data  = voc.load(voc_dir % 2007, 'test', total_num = 100)
   
   #print('Train Accuracy: ',voc.evaluate(boxes, voc_dir % 2007, 'trainval'))
   results = []
-  idx     = np.random.randint(100)
+
+  idx = np.random.randint(100)
   for i,(img,_) in enumerate(acc_data):
     acc_outs = sess.run(yolo, {x: yolo.preprocess(img),is_training: False})
     boxes=yolo.get_boxes(acc_outs, img.shape[1:3])
@@ -103,6 +113,7 @@ def evaluate_accuracy(data_type='tr'):
   print(eval_print)
   return eval_print
 
+  
 with tf.Session() as sess:
   ckpt_files = [f for f in os.listdir(checkpoint_path) if os.path.isfile(os.path.join(checkpoint_path, f)) and 'ckpt' in f]
   if (len(ckpt_files)!=0):
@@ -113,7 +124,7 @@ with tf.Session() as sess:
 
   losses = []
   subject= "Trial 1 on server- Occam's Code -Separable"
-  emails_list=['ahmedfakhry805@gmail.com', 'ahmadadelattia@gmail.com']
+  #emails_list=['ahmedfakhry805@gmail.com', 'ahmadadelattia@gmail.com']
   print('Starting')
   pbar = tqdm(total = 233)
   pbar.update(35) 
@@ -131,7 +142,7 @@ with tf.Session() as sess:
         break
       metas.insert(0, yolo.preprocess(imgs))  # for `inputs`
       metas.append(True)                      # for `is_training`
-      outs= sess.run([train, yolo.loss],dict(zip(yolo.inputs, metas)))
+      outs = sess.run([train, yolo.loss],dict(zip(yolo.inputs, metas)))
       losses.append(outs[-1])
     
     print(print_out)
